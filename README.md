@@ -1,21 +1,9 @@
 # PINN
 A physics-informed data-driven model applied for gas dispersion.
+This code trains a Physics-Informed Data-Driven model to reproduce steady-state dispersion simulations of methane in the air using DeepXDE. 
 
-Description: 
-    This code trains a Physics-Informed Data-Driven model to 
-    reproduce steady-state dispersion simulations of methane in the air using DeepXDE. 
+Dispersion: code for training the dispersion model.
+Cavity: code for training the lid-driven cavity model.
+CFD: code for generating the dataset. 
 
-Auxiliary code:
-    functions.py, plot_functions.py
-
-Input files:     
-    dataset_file.xlsx
-    
-Output files:
-    Images, results.pkl 
-
-Libraries:
-    !pip install deepxde 
-    !pip install tensorflow 
-    !pip install matplotlib 
-
+Libraries:    deepxde, tensorflow, matplotlib.
