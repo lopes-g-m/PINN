@@ -1,0 +1,6 @@
+set title "Error residual"
+set xlabel "Number of iterations"
+set ylabel "Residual"
+set logscale y
+plot "error.dat" using 1:2 title 'Continuity' with lines, \
+     "error.dat" using 1:3 title 'Ya' with lines
