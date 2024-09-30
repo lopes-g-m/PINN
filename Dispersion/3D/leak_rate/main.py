@@ -230,9 +230,10 @@ if __name__ == "__main__":
     train_delta_t_ms,train_delta_t_s,train_delta_t_m, train_delta_t_h =  calculate_time (train_initial_time,train_final_time) # Calculate train time
     test_delta_t_ms,test_delta_t_s,test_delta_t_m, test_delta_t_h =  calculate_time (test_initial_time,test_final_time) # Calculate prediction time
        
-        
     ###############################################################################
-    
+    # Model evaluations with leak rates of 1, 2, 3, and 4 kg/s.     
+    ###############################################################################
+  
     path1 = current_directory + "/dataset/dispersion_35_steady/"
     path2 = current_directory + "/dataset/dispersion_36_steady/"
     path3 = current_directory + "/dataset/dispersion_37_steady/"
@@ -246,8 +247,7 @@ if __name__ == "__main__":
     flowSolution1 = "FlowSolutionCC#0000000251"
     flowSolution2 = "FlowSolutionCC#0000000257"
     flowSolution3 = "FlowSolutionCC#0000000263"
-    flowSolution4 =  "FlowSolutionCC#0000000259"
-    
+    flowSolution4 =  "FlowSolutionCC#0000000259"    
     
     data_points_1, data_c_1, data_u_1, data_v_1, data_w_1, data_p_1 = import_flacs_steady_simulation(path1, file1,flowSolution1)
     data_points_2, data_c_2, data_u_2, data_v_2, data_w_2, data_p_2 = import_flacs_steady_simulation(path2, file2,flowSolution2)
@@ -265,27 +265,28 @@ if __name__ == "__main__":
     val_x_4,val_y_4,val_z_4,val_c_4 = data_x_int_4, data_y_int_4, data_z_int_4, data_c_int_4        
     
     ###############################################################################      
-    
+    # Leak rate 1 kg/s
     val_m_value = 1
     val_m_1 = np.full((val_x_1.shape[0], 1), val_m_value) 
     norm_pred_c_1, pred_u_1, pred_v_1, pred_w_1, pred_p_1 = model.predict( val_x_1,val_y_1,val_z_1,val_m_1) 
     pred_c_1 = denormalize_array_0_1(norm_pred_c_1, minC, maxC)      
-    
+    # Leak rate 2 kg/s
     val_m_value = 2
     val_m_2 = np.full((val_x_2.shape[0], 1), val_m_value) 
     norm_pred_c_2, pred_u_2, pred_v_2, pred_w_2, pred_p_2 = model.predict( val_x_2,val_y_2,val_z_2,val_m_2)  
     pred_c_2 = denormalize_array_0_1(norm_pred_c_2, minC, maxC)       
-    
+    # Leak rate 3 kg/s
     val_m_value = 3
     val_m_3 = np.full((val_x_3.shape[0], 1), val_m_value) 
     norm_pred_c_3, pred_u_3, pred_v_3, pred_w_3, pred_p_3 = model.predict( val_x_3,val_y_3,val_z_3,val_m_3)       
     pred_c_3 = denormalize_array_0_1(norm_pred_c_3, minC, maxC)   
-    
+    # Leak rate 4 kg/s
     val_m_value = 4
     val_m_4 = np.full((val_x_4.shape[0], 1), val_m_value) 
     norm_pred_c_4, pred_u_4, pred_v_4, pred_w_4, pred_p_4 = model.predict( val_x_4,val_y_4,val_z_4,val_m_4) 
     pred_c_4 = denormalize_array_0_1(norm_pred_c_4, minC, maxC)        
-    
+
+    # Calculate Error 
     re_c_1 = relative_error(pred_c_1,val_c_1)
     re_c_2 = relative_error(pred_c_2,val_c_2)
     re_c_3 = relative_error(pred_c_3,val_c_3) 
@@ -294,27 +295,33 @@ if __name__ == "__main__":
     av_re_1 = av_rel_error(pred_c_1,val_c_1)
     av_re_2 = av_rel_error(pred_c_2,val_c_2)
     av_re_3 = av_rel_error(pred_c_3,val_c_3)
-    av_re_4 = av_rel_error(pred_c_4,val_c_4)    
-    
+    av_re_4 = av_rel_error(pred_c_4,val_c_4)   
+  
+    # 1 kg/s
     frac_val_c_1 = fraction_in_range(val_c_1,lim_inf_ch4,lim_sup_ch4)    
     frac_pred_c_1 = fraction_in_range(pred_c_1,lim_inf_ch4,lim_sup_ch4)     
     V_val_c_1 = frac_val_c_1 * Vcell * len(val_c_1) 
     V_pred_c_1 = frac_pred_c_1 * Vcell * len(pred_c_1) 
-    
+
+    # 2 kg/s
     frac_val_c_2 = fraction_in_range(val_c_2,lim_inf_ch4,lim_sup_ch4)    
     frac_pred_c_2 = fraction_in_range(pred_c_2,lim_inf_ch4,lim_sup_ch4)     
     V_val_c_2 = frac_val_c_2 * Vcell * len(val_c_2) 
     V_pred_c_2 = frac_pred_c_2 * Vcell * len(pred_c_2)
-    
+  
+    # 3 kg/s  
     frac_val_c_3 = fraction_in_range(val_c_3,lim_inf_ch4,lim_sup_ch4)    
     frac_pred_c_3 = fraction_in_range(pred_c_3,lim_inf_ch4,lim_sup_ch4)     
     V_val_c_3 = frac_val_c_3 * Vcell * len(val_c_3) 
     V_pred_c_3 = frac_pred_c_3 * Vcell * len(pred_c_3)
-    
+  
+    # 4 kg/s    
     frac_val_c_4 = fraction_in_range(val_c_4,lim_inf_ch4,lim_sup_ch4)    
     frac_pred_c_4 = fraction_in_range(pred_c_4,lim_inf_ch4,lim_sup_ch4)     
     V_val_c_4 = frac_val_c_4 * Vcell * len(val_c_4) 
-    V_pred_c_4 = frac_pred_c_4 * Vcell * len(pred_c_4)     
+    V_pred_c_4 = frac_pred_c_4 * Vcell * len(pred_c_4)  
+
+   # Generate vtk files to ParaView     
     
     generate_3D_vtk( val_x_1,val_y_1,val_z_1, pred_c_1, 'title', savePath+'model_prediction/pred_1.vtk', Nx, Ny, Nz, num_columns=6) 
     generate_3D_vtk( val_x_2,val_y_2,val_z_2, pred_c_2, 'title', savePath+'model_prediction/pred_2.vtk', Nx, Ny, Nz, num_columns=6) 
