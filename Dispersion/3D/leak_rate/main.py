@@ -50,9 +50,9 @@ if __name__ == "__main__":
     lim_inf_ch4 = 0.05
     lim_sup_ch4 = 0.15    
     
-    Nx = 4
-    Ny = 8
-    Nz = 5
+    Nx = 40
+    Ny = 80
+    Nz = 50
     
     paths = [current_directory + "/dataset/dispersion_35_steady/",
              current_directory + "/dataset/dispersion_36_steady/",
