@@ -133,6 +133,10 @@ if __name__ == "__main__":
                            x_eqns, y_eqns, z_eqns,
                            layers, batch_size,
                            Pec = Pe, Rey = Re) 
+  
+
+    modelPath = "/home/l4r1s4/Guilherme/HFM/steady_dispersion/modelo_m/case 5/model"
+    model.load_model(modelPath)
     
     
     # Calculate Re and Pe       
