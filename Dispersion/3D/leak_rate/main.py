@@ -12,24 +12,32 @@ import vtk
 
 current_directory = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0,current_directory)
-tf.disable_v2_behavior() 
+tf.disable_v2_behavior() # Tensorflow version 1 
 
 from utilities import neural_net, Navier_Stokes_3D, steady_state_Navier_Stokes_3D, \
-                      tf_session, mean_squared_error, model                   
-                      
+                      tf_session, mean_squared_error, model   
+
+# Model functions 
+
 from functions import load_excel_data, percentage_greater_than,load_geometry , normalize_array_0_1,\
      denormalize_array_0_1,calculate_time,split_train_test, calc_conc, get_sample,\
      normalize_dataset_0_1,fraction_in_range
+
+# Normalization, Import Dataset, Split, Cloud Volume Calculation, Calculate Time 
      
 from plot_functions import plot_data_distribution,av_rel_error,plot_gov_eq_loss,\
      plot_loss_history,plot_sup_loss, plot_gov_4_eq_loss,plot_train_history,plot_3_2d_domains,\
      plot_3_2d_domains_bump,plot_2d_domains, plot_2d_domains_bump,plot_2_loss_history,\
      plot_error_dist,relative_error,generate_3D_vtk,plot_loss,generate_unstructured_3D_vtk,\
      interpolate_to_structured_grid
+
+# Plot Functions, Generate vtk file, Calculate Relative Error 
      
 from pre_process import import_multiple_flacs_steady_simulations,pre_process_data,organizeSimulationData,\
      prepare_data,remove_element_mesh,flatten_arrays_dic,flatten_arrays,\
      get_simulation_data,import_flacs_steady_simulation
+
+# Import Simulation Dataset from FLACs 
 
 if __name__ == "__main__":     
     
@@ -39,9 +47,9 @@ if __name__ == "__main__":
     
     layers = [4] + 10* [50] + [5]   
     test_frac = 0.2
-    Niter = 1
+    Niter = 10000
     
-    Pe = 1
+    Pe = 1 # Adjustable parameter 
     Re = 1     
     # Adam optimizer 
     lr = 1e-3  
@@ -49,11 +57,9 @@ if __name__ == "__main__":
     
     lim_inf_ch4 = 0.05
     lim_sup_ch4 = 0.15    
-    
-    Nx = 40
-    Ny = 80
-    Nz = 50
-    
+
+    # Simulations with leak rates of 1, 2, 3, and 4 kg/s 
+  
     paths = [current_directory + "/dataset/dispersion_35_steady/",
              current_directory + "/dataset/dispersion_36_steady/",
              current_directory + "/dataset/dispersion_37_steady/",
@@ -80,7 +86,9 @@ if __name__ == "__main__":
 
     data_x, data_y, data_z, data_m, data_c, data_u, data_v, data_w, data_p = pre_process_data(MultipleSimulationsData, arrLeakRate)
     
-    # Validation files    
+    # Import validation files   
+    # Simulations with leak rates of 1.5, 2.5, 3.5 kg/s
+  
     path42 = current_directory + "/dataset/dispersion_42/"
     path43 = current_directory + "/dataset/dispersion_43/"
     path44 = current_directory + "/dataset/dispersion_44/"
@@ -110,7 +118,13 @@ if __name__ == "__main__":
     val_x_2_5,val_y_2_5,val_z_2_5,val_c_2_5 = data_x_int_42, data_y_int_42, data_z_int_42, data_c_int_42 
     val_x_3_5,val_y_3_5,val_z_3_5,val_c_3_5 = data_x_int_45, data_y_int_45, data_z_int_45, data_c_int_45    
     
-    ###########################################################################      
+    ###########################################################################  
+    # Model evaluation in another grid 
+      
+    Nx = 40
+    Ny = 80
+    Nz = 50
+  
     minX,maxX = min(data_x),max(data_x)
     minY,maxY = min(data_y),max(data_y)
     minZ,maxZ = min(data_z),max(data_z)    
@@ -124,7 +138,8 @@ if __name__ == "__main__":
     
     minC,maxC = min(data_c),max(data_c)    
     norm_data_c = normalize_array_0_1(data_c)
-    
+
+    # Dataset split  
     train_x, test_x, train_y, test_y, train_z, test_z, train_m,test_m, train_c, test_c = train_test_split(data_x, data_y, data_z, data_m, norm_data_c, test_size=test_frac, random_state=42)
 
     x_eqns, y_eqns, z_eqns = train_x, train_y, train_z    
@@ -132,17 +147,18 @@ if __name__ == "__main__":
     model = model(train_x, train_y, train_z, train_c, train_m,
                            x_eqns, y_eqns, z_eqns,
                            layers, batch_size,
-                           Pec = Pe, Rey = Re) 
-  
+                           Pec = Pe, Rey = Re)   
 
-    modelPath = savePath
-    model.save_model(modelPath)    
-    model.load_model(modelPath)
-    
+   
     
     # Calculate Re and Pe       
     train_initial_time = time.time()    
     loss_history = model.train(Niter , learning_rate=lr) 
+
+    modelPath = savePath
+    model.save_model(modelPath) 
+    #model.load_model(modelPath) 
+  
     plot_loss(loss_history, savePath, title='loss_history.png')      
   
     train_final_time = time.time()
