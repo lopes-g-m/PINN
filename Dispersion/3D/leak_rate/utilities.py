@@ -18,6 +18,7 @@ def tf_session():
     return sess
 
 def relative_error(pred, exact):
+    # Calculate Relative Error 
     if type(pred) is np.ndarray:
         return np.sqrt(np.mean(np.square(pred - exact))/np.mean(np.square(exact - np.mean(exact))))
     return tf.sqrt(tf.reduce_mean(tf.square(pred - exact))/tf.reduce_mean(tf.square(exact - tf.reduce_mean(exact))))
@@ -29,12 +30,14 @@ def mean_squared_error(pred, exact):
     return tf.reduce_mean(tf.square(pred - exact))
 
 def fwd_gradients(Y, x):
+    # Calculate gradient of the output from the th input 
     dummy = tf.ones_like(Y)
     G = tf.gradients(Y, x, grad_ys=dummy, colocate_gradients_with_ops=True)[0]
     Y_x = tf.gradients(G, dummy, colocate_gradients_with_ops=True)[0]
     return Y_x
 
 class neural_net(object):
+    # Function for the Neural Network Object 
     def __init__(self, *inputs, layers):
         
         self.layers = layers
@@ -85,75 +88,6 @@ class neural_net(object):
         Y = tf.split(H, num_or_size_splits=H.shape[1], axis=1)
     
         return Y
-
-def Navier_Stokes_2D(c, u, v, p, t, x, y, Pec, Rey):
-    
-    Y = tf.concat([c, u, v, p], 1)
-    
-    Y_t = fwd_gradients(Y, t)
-    Y_x = fwd_gradients(Y, x)
-    Y_y = fwd_gradients(Y, y)
-    Y_xx = fwd_gradients(Y_x, x)
-    Y_yy = fwd_gradients(Y_y, y)
-    
-    c = Y[:,0:1]
-    u = Y[:,1:2]
-    v = Y[:,2:3]
-    p = Y[:,3:4]
-    
-    c_t = Y_t[:,0:1]
-    u_t = Y_t[:,1:2]
-    v_t = Y_t[:,2:3]
-    
-    c_x = Y_x[:,0:1]
-    u_x = Y_x[:,1:2]
-    v_x = Y_x[:,2:3]
-    p_x = Y_x[:,3:4]
-    
-    c_y = Y_y[:,0:1]
-    u_y = Y_y[:,1:2]
-    v_y = Y_y[:,2:3]
-    p_y = Y_y[:,3:4]
-    
-    c_xx = Y_xx[:,0:1]
-    u_xx = Y_xx[:,1:2]
-    v_xx = Y_xx[:,2:3]
-    
-    c_yy = Y_yy[:,0:1]
-    u_yy = Y_yy[:,1:2]
-    v_yy = Y_yy[:,2:3]
-    
-    e1 = c_t + (u*c_x + v*c_y) - (1.0/Pec)*(c_xx + c_yy)
-    e2 = u_t + (u*u_x + v*u_y) + p_x - (1.0/Rey)*(u_xx + u_yy) 
-    e3 = v_t + (u*v_x + v*v_y) + p_y - (1.0/Rey)*(v_xx + v_yy)
-    e4 = u_x + v_y
-    
-    return e1, e2, e3, e4
-
-def Gradient_Velocity_2D(u, v, x, y):
-    
-    Y = tf.concat([u, v], 1)
-    
-    Y_x = fwd_gradients(Y, x)
-    Y_y = fwd_gradients(Y, y)
-    
-    u_x = Y_x[:,0:1]
-    v_x = Y_x[:,1:2]
-    
-    u_y = Y_y[:,0:1]
-    v_y = Y_y[:,1:2]
-    
-    return [u_x, v_x, u_y, v_y]
-
-def Strain_Rate_2D(u, v, x, y):
-    
-    [u_x, v_x, u_y, v_y] = Gradient_Velocity_2D(u, v, x, y)
-    
-    eps11dot = u_x
-    eps12dot = 0.5*(v_x + u_y)
-    eps22dot = v_y
-    
-    return [eps11dot, eps12dot, eps22dot]
 
 def Navier_Stokes_3D(c, u, v, w, p, t, x, y, z, Pec, Rey):
     
@@ -211,79 +145,20 @@ def Navier_Stokes_3D(c, u, v, w, p, t, x, y, z, Pec, Rey):
     v_zz = Y_zz[:,2:3]
     w_zz = Y_zz[:,3:4]
     
-    e1 = c_t + (u*c_x + v*c_y + w*c_z) - (1.0/Pec)*(c_xx + c_yy + c_zz)
-    e2 = u_t + (u*u_x + v*u_y + w*u_z) + p_x - (1.0/Rey)*(u_xx + u_yy + u_zz)
-    e3 = v_t + (u*v_x + v*v_y + w*v_z) + p_y - (1.0/Rey)*(v_xx + v_yy + v_zz)
-    e4 = w_t + (u*w_x + v*w_y + w*w_z) + p_z - (1.0/Rey)*(w_xx + w_yy + w_zz)
-    e5 = u_x + v_y + w_z
+    e1 = c_t + (u*c_x + v*c_y + w*c_z) - (1.0/Pec)*(c_xx + c_yy + c_zz) # Transport 
+    e2 = u_t + (u*u_x + v*u_y + w*u_z) + p_x - (1.0/Rey)*(u_xx + u_yy + u_zz) # NS x 
+    e3 = v_t + (u*v_x + v*v_y + w*v_z) + p_y - (1.0/Rey)*(v_xx + v_yy + v_zz) # NS y
+    e4 = w_t + (u*w_x + v*w_y + w*w_z) + p_z - (1.0/Rey)*(w_xx + w_yy + w_zz) # NS z
+    e5 = u_x + v_y + w_z # Continuity 
     
     return e1, e2, e3, e4, e5
 
-def steady_state_Navier_Stokes_3D_R(c, u, v, w, p, x, y, z, R, Pec, Rey):
-    
-    Y = tf.concat([c, u, v, w, p], 1)
-    
-    Y_x = fwd_gradients(Y, x)
-    Y_y = fwd_gradients(Y, y)
-    Y_z = fwd_gradients(Y, z)
-    Y_R = fwd_gradients(Y, R)
 
-
-    Y_xx = fwd_gradients(Y_x, x)
-    Y_yy = fwd_gradients(Y_y, y)
-    Y_zz = fwd_gradients(Y_z, z)
-    Y_RR = fwd_gradients(Y_R, R)    
-    
-    
-    c = Y[:,0:1]
-    u = Y[:,1:2]
-    v = Y[:,2:3]
-    w = Y[:,3:4]
-    p = Y[:,4:5]
-    
-    c_x = Y_x[:,0:1]
-    u_x = Y_x[:,1:2]
-    v_x = Y_x[:,2:3]
-    w_x = Y_x[:,3:4]
-    p_x = Y_x[:,4:5]
-    
-    c_y = Y_y[:,0:1]
-    u_y = Y_y[:,1:2]
-    v_y = Y_y[:,2:3]
-    w_y = Y_y[:,3:4]
-    p_y = Y_y[:,4:5]
-       
-    c_z = Y_z[:,0:1]
-    u_z = Y_z[:,1:2]
-    v_z = Y_z[:,2:3]
-    w_z = Y_z[:,3:4]
-    p_z = Y_z[:,4:5]
-    
-    c_xx = Y_xx[:,0:1]
-    u_xx = Y_xx[:,1:2]
-    v_xx = Y_xx[:,2:3]
-    w_xx = Y_xx[:,3:4]
-    
-    c_yy = Y_yy[:,0:1]
-    u_yy = Y_yy[:,1:2]
-    v_yy = Y_yy[:,2:3]
-    w_yy = Y_yy[:,3:4]
-       
-    c_zz = Y_zz[:,0:1]
-    u_zz = Y_zz[:,1:2]
-    v_zz = Y_zz[:,2:3]
-    w_zz = Y_zz[:,3:4]
-    
-    e1 = (u*c_x + v*c_y + w*c_z) - (1.0/Pec)*(c_xx + c_yy + c_zz)
-    e2 = (u*u_x + v*u_y + w*u_z) + p_x - (1.0/Rey)*(u_xx + u_yy + u_zz)
-    e3 = (u*v_x + v*v_y + w*v_z) + p_y - (1.0/Rey)*(v_xx + v_yy + v_zz)
-    e4 = (u*w_x + v*w_y + w*w_z) + p_z - (1.0/Rey)*(w_xx + w_yy + w_zz)
-    e5 = u_x + v_y + w_z
-        
-    return e1, e2, e3, e4, e5
 
 def steady_state_Navier_Stokes_3D(c, u, v, w, p, x, y, z,  Pec, Rey):
     
+    # Steady-State Navier Stokes Equation  
+    
     Y = tf.concat([c, u, v, w, p], 1)
     
     Y_x = fwd_gradients(Y, x)
@@ -342,30 +217,10 @@ def steady_state_Navier_Stokes_3D(c, u, v, w, p, x, y, z,  Pec, Rey):
     return e1, e2, e3, e4, e5
 
 
-def Gradient_Velocity_3D(u, v, w, x, y, z):
-    
-    Y = tf.concat([u, v, w], 1)
-    
-    Y_x = fwd_gradients(Y, x)
-    Y_y = fwd_gradients(Y, y)
-    Y_z = fwd_gradients(Y, z)
-    
-    u_x = Y_x[:,0:1]
-    v_x = Y_x[:,1:2]
-    w_x = Y_x[:,2:3]
-    
-    u_y = Y_y[:,0:1]
-    v_y = Y_y[:,1:2]
-    w_y = Y_y[:,2:3]
-    
-    u_z = Y_z[:,0:1]
-    v_z = Y_z[:,1:2]
-    w_z = Y_z[:,2:3]
-    
-    return [u_x, v_x, w_x, u_y, v_y, w_y, u_z, v_z, w_z]
-
-
 class model(object):
+    
+    # Initiate model with data of: x,y,z, c and leak rate. 
+    # Residual points of x, y, and z.  
     
     def __init__(self, x_data, y_data, z_data, c_data, R_data, 
                        x_eqns, y_eqns, z_eqns,
@@ -388,9 +243,12 @@ class model(object):
         [self.x_data_tf, self.y_data_tf, self.z_data_tf, self.R_data_tf, self.c_data_tf] = [tf.placeholder(tf.float32, shape=[None, 1]) for _ in range(5)]
         [self.x_eqns_tf, self.y_eqns_tf, self.z_eqns_tf] = [tf.placeholder(tf.float32, shape=[None, 1]) for _ in range(3)]
         
-        # physics "uninformed" neural networks
+        # Physics "Uninformed" Neural Networks
+        # Supervised Learning 
+                           
         self.net_cuvwp = neural_net(self.x_data, self.y_data, self.z_data, self.R_data, layers=self.layers)
-        
+        # Leak rate is a NN input 
+                           
         [self.c_data_pred,
          self.u_data_pred,
          self.v_data_pred,
@@ -400,7 +258,8 @@ class model(object):
                                             self.z_data_tf,
                                             self.R_data_tf)
          
-        # physics "informed" neural networks
+        # Un-supervised learning 
+        # Governing Equations                    
         
         [self.c_eqns_pred,
          self.u_eqns_pred,
@@ -426,7 +285,7 @@ class model(object):
                                                self.Pec,
                                                self.Rey)
         
-        # loss
+        # Total Loss
         self.loss = mean_squared_error(self.c_data_pred, self.c_data_tf) + \
                     mean_squared_error(self.e1_eqns_pred, 0.0) + \
                     mean_squared_error(self.e2_eqns_pred, 0.0) + \
@@ -434,7 +293,7 @@ class model(object):
                     mean_squared_error(self.e4_eqns_pred, 0.0) + \
                     mean_squared_error(self.e5_eqns_pred, 0.0) 
         
-        # optimizers
+        # Adam Optimizers
         self.learning_rate = tf.placeholder(tf.float32, shape=[])
         self.optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
         self.train_op = self.optimizer.minimize(self.loss)
@@ -444,6 +303,7 @@ class model(object):
     #def train(self, total_time, learning_rate):
     def train(self, Niter, learning_rate):
 
+        # Train model till Niter
         
         loss_history = []        
         
@@ -509,8 +369,7 @@ class model(object):
                                                        self.e3_eqns_pred,
                                                        self.e4_eqns_pred,
                                                        self.e5_eqns_pred,
-                                                       self.learning_rate], tf_dict)   
-                                                       
+                                                       self.learning_rate], tf_dict)                                               
                                                        
                 loss_history.append(loss_value)
                                 
@@ -519,32 +378,30 @@ class model(object):
                 start_time = time.time()
             it += 1
             
-            
+        # Return Total Loss History 
         return loss_history
             
-
-    
+  
     def predict(self, x_star, y_star, z_star, R_star):
-        
-        tf_dict = {self.x_data_tf: x_star, self.y_data_tf: y_star, self.z_data_tf: z_star,  self.R_data_tf: R_star}
-        
+        # Trained Model Prediction         
+        tf_dict = {self.x_data_tf: x_star, self.y_data_tf: y_star, self.z_data_tf: z_star,  self.R_data_tf: R_star}        
         c_star = self.sess.run(self.c_data_pred, tf_dict)
         u_star = self.sess.run(self.u_data_pred, tf_dict)
         v_star = self.sess.run(self.v_data_pred, tf_dict)
         w_star = self.sess.run(self.w_data_pred, tf_dict)
-        p_star = self.sess.run(self.p_data_pred, tf_dict)
-        
+        p_star = self.sess.run(self.p_data_pred, tf_dict)        
         return c_star, u_star, v_star, w_star, p_star  
     
     def save_model(self, model_path):
+        # Save Model 
         saver = tf.train.Saver()
         save_path = saver.save(self.sess, model_path)
         print(f"Model saved in path: {save_path}")
         
     def load_model(self, model_path):
+        # Import Model 
         saver = tf.train.Saver()
         saver.restore(self.sess, model_path)
-        print(f"Model restored from path: {model_path}")
-    
+        print(f"Model restored from path: {model_path}")  
     
     
