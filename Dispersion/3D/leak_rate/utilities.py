@@ -4,6 +4,7 @@ import time
 
 
 def tf_session():
+    # Numbers of Cores to run/train 
     # tf session
     config = tf.ConfigProto(allow_soft_placement=True,
                             log_device_placement=True)
@@ -22,6 +23,7 @@ def relative_error(pred, exact):
     return tf.sqrt(tf.reduce_mean(tf.square(pred - exact))/tf.reduce_mean(tf.square(exact - tf.reduce_mean(exact))))
 
 def mean_squared_error(pred, exact):
+    # Calculate Mean Squarred Error (MSE) 
     if type(pred) is np.ndarray:
         return np.mean(np.square(pred - exact))
     return tf.reduce_mean(tf.square(pred - exact))
