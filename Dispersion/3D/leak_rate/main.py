@@ -81,9 +81,6 @@ if __name__ == "__main__":
     data_x_simuation,data_y_simuation,data_z_simuation,data_c_simuation,data_u_simuation,data_v_simuation,data_w_simuation,data_p_simuation = get_simulation_data(load_data_x,load_data_y,load_data_z,
                             load_data_c,load_data_u,load_data_v,load_data_w,load_data_p,simuation)
     
-    
-    #data_x , data_y , data_z , data_c , data_u , data_v ,data_w , data_p  = prepare_data(load_data_x, load_data_y , load_data_z,  load_data_c , load_data_u, load_data_v, load_data_w, load_data_p)
-
     data_x, data_y, data_z, data_m, data_c, data_u, data_v, data_w, data_p = pre_process_data(MultipleSimulationsData, arrLeakRate)
     
     # Import validation files   
@@ -119,12 +116,10 @@ if __name__ == "__main__":
     val_x_3_5,val_y_3_5,val_z_3_5,val_c_3_5 = data_x_int_45, data_y_int_45, data_z_int_45, data_c_int_45    
     
     ###########################################################################  
-    # Model evaluation in another grid 
-      
+    # Model evaluation in another grid      
     Nx = 40
     Ny = 80
-    Nz = 50
-  
+    Nz = 50  
     minX,maxX = min(data_x),max(data_x)
     minY,maxY = min(data_y),max(data_y)
     minZ,maxZ = min(data_z),max(data_z)    
@@ -139,48 +134,58 @@ if __name__ == "__main__":
     minC,maxC = min(data_c),max(data_c)    
     norm_data_c = normalize_array_0_1(data_c)
 
-    # Dataset split  
+    # Dataset Split  
     train_x, test_x, train_y, test_y, train_z, test_z, train_m,test_m, train_c, test_c = train_test_split(data_x, data_y, data_z, data_m, norm_data_c, test_size=test_frac, random_state=42)
 
+    # Residual Points - Points for Governing Equation Calculation
     x_eqns, y_eqns, z_eqns = train_x, train_y, train_z    
-    
+
+    # Call Model 
     model = model(train_x, train_y, train_z, train_c, train_m,
                            x_eqns, y_eqns, z_eqns,
                            layers, batch_size,
-                           Pec = Pe, Rey = Re)   
-
-   
+                           Pec = Pe, Rey = Re)      
     
-    # Calculate Re and Pe       
     train_initial_time = time.time()    
+  
+    # Train Model 
     loss_history = model.train(Niter , learning_rate=lr) 
 
     modelPath = savePath
     model.save_model(modelPath) 
+    # Save Model 
+  
     #model.load_model(modelPath) 
+    # Import Model 
   
     plot_loss(loss_history, savePath, title='loss_history.png')      
   
     train_final_time = time.time()
     test_initial_time = time.time()
-    
+    # Save trainig time 
+  
+    # Model evaluations with leak rates of 1.5, 2.5, 3.5 kg/s
+    # 1.5 kg/s
     val_m_value = 1.5 
     val_m_1_5 = np.full((val_x_1_5.shape[0], 1), val_m_value) 
     norm_pred_c_1_5, pred_u_1_5, pred_v_1_5, pred_w_1_5, pred_p_1_5 = model.predict( val_x_1_5,val_y_1_5,val_z_1_5,val_m_1_5)   
     pred_c_1_5 = denormalize_array_0_1(norm_pred_c_1_5, minC, maxC)
-    
+  
+    # 2.5 kg/s  
     val_m_value = 2.5 
     val_m_2_5 = np.full((val_x_2_5.shape[0], 1), val_m_value) 
     norm_pred_c_2_5, pred_u_2_5, pred_v_2_5, pred_w_2_5, pred_p_2_5 = model.predict( val_x_2_5,val_y_2_5,val_z_2_5,val_m_2_5)    
     pred_c_2_5 = denormalize_array_0_1(norm_pred_c_2_5, minC, maxC)
-    
+
+    # 3.5 kg/s      
     val_m_value = 3.5 
     val_m_3_5 = np.full((val_x_3_5.shape[0], 1), val_m_value) 
     norm_pred_c_3_5, pred_u_3_5, pred_v_3_5, pred_w_3_5, pred_p_3_5 = model.predict( val_x_3_5,val_y_3_5,val_z_3_5,val_m_3_5)     
     pred_c_3_5 = denormalize_array_0_1(norm_pred_c_3_5, minC, maxC)
     
     test_final_time = time.time()
-    
+
+    # Calculate Relative Error 
     re_c_1_5 = relative_error(pred_c_1_5,val_c_1_5)
     re_c_2_5 = relative_error(pred_c_2_5,val_c_2_5)
     re_c_3_5 = relative_error(pred_c_3_5,val_c_3_5) 
@@ -189,22 +194,26 @@ if __name__ == "__main__":
     av_re_2_5 = av_rel_error(pred_c_2_5,val_c_2_5)
     av_re_3_5 = av_rel_error(pred_c_3_5,val_c_3_5)  
     
-    # Cloud Size        
+    # Calculate Cloud Size  
+    # 1.5 kg/s
     frac_val_c_1_5 = fraction_in_range(val_c_1_5,lim_inf_ch4,lim_sup_ch4)    
     frac_pred_c_1_5 = fraction_in_range(pred_c_1_5,lim_inf_ch4,lim_sup_ch4)     
     V_val_c_1_5 = frac_val_c_1_5 * Vcell * len(val_c_1_5) 
     V_pred_c_1_5 = frac_pred_c_1_5 * Vcell * len(pred_c_1_5) 
-    
+
+    # 2.5 kg/s
     frac_val_c_2_5 = fraction_in_range(val_c_2_5,lim_inf_ch4,lim_sup_ch4)    
     frac_pred_c_2_5 = fraction_in_range(pred_c_2_5,lim_inf_ch4,lim_sup_ch4)     
     V_val_c_2_5 = frac_val_c_2_5 * Vcell * len(val_c_2_5) 
     V_pred_c_2_5 = frac_pred_c_2_5 * Vcell * len(pred_c_2_5)
-    
+  
+    # 3.5 kg/s
     frac_val_c_3_5 = fraction_in_range(val_c_3_5,lim_inf_ch4,lim_sup_ch4)    
     frac_pred_c_3_5 = fraction_in_range(pred_c_3_5,lim_inf_ch4,lim_sup_ch4)     
     V_val_c_3_5 = frac_val_c_3_5 * Vcell * len(val_c_3_5) 
     V_pred_c_3_5 = frac_pred_c_3_5 * Vcell * len(pred_c_3_5)
-    
+
+    # Generate vtk files to ParaView     
     generate_3D_vtk( val_x_1_5,val_y_1_5,val_z_1_5, pred_c_1_5, 'title', savePath+'model_prediction/pred_1_5.vtk', Nx, Ny, Nz, num_columns=6) 
     generate_3D_vtk( val_x_2_5,val_y_2_5,val_z_2_5, pred_c_2_5, 'title', savePath+'model_prediction/pred_2_5.vtk', Nx, Ny, Nz, num_columns=6) 
     generate_3D_vtk( val_x_3_5,val_y_3_5,val_z_3_5, pred_c_3_5, 'title', savePath+'model_prediction/pred_3_5.vtk', Nx, Ny, Nz, num_columns=6) 
@@ -218,8 +227,8 @@ if __name__ == "__main__":
     generate_3D_vtk( val_x_3_5,val_y_3_5,val_z_3_5, re_c_3_5, 'title', savePath+'error/error_3_5.vtk', Nx, Ny, Nz, num_columns=6)    
          
     # Calculate time     
-    train_delta_t_ms,train_delta_t_s,train_delta_t_m, train_delta_t_h =  calculate_time (train_initial_time,train_final_time) # calculate train time
-    test_delta_t_ms,test_delta_t_s,test_delta_t_m, test_delta_t_h =  calculate_time (test_initial_time,test_final_time) # calculate prediction time
+    train_delta_t_ms,train_delta_t_s,train_delta_t_m, train_delta_t_h =  calculate_time (train_initial_time,train_final_time) # Calculate train time
+    test_delta_t_ms,test_delta_t_s,test_delta_t_m, test_delta_t_h =  calculate_time (test_initial_time,test_final_time) # Calculate prediction time
        
         
     ###############################################################################
