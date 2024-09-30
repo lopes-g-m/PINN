@@ -532,4 +532,17 @@ class model(object):
         w_star = self.sess.run(self.w_data_pred, tf_dict)
         p_star = self.sess.run(self.p_data_pred, tf_dict)
         
-        return c_star, u_star, v_star, w_star, p_star    
+        return c_star, u_star, v_star, w_star, p_star  
+    
+    def save_model(self, model_path):
+        saver = tf.train.Saver()
+        save_path = saver.save(self.sess, model_path)
+        print(f"Model saved in path: {save_path}")
+        
+    def load_model(self, model_path):
+        saver = tf.train.Saver()
+        saver.restore(self.sess, model_path)
+        print(f"Model restored from path: {model_path}")
+    
+    
+    
