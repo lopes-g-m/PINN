@@ -135,7 +135,8 @@ if __name__ == "__main__":
                            Pec = Pe, Rey = Re) 
   
 
-    modelPath = "/home/l4r1s4/Guilherme/HFM/steady_dispersion/modelo_m/case 5/model"
+    modelPath = savePath
+    model.save_model(modelPath)    
     model.load_model(modelPath)
     
     
