@@ -5,8 +5,7 @@ Cavity: code for training the lid-driven cavity model.
 
 Libraries: deepxde, tensorflow, matplotlib.
 
-Link for the dataset drive folder: 
-https://drive.google.com/drive/folders/1WQpwTHAzmj5V1dNw3pHyZoGkltkMSYq_?usp=drive_link
+
 
 
 
